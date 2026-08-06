@@ -1,0 +1,37 @@
+name: 'Claude Code Review'
+description: 'Reviews pull request diffs with Claude and posts an inline review'
+author: 'jstromwick'
+branding:
+  icon: 'message-square'
+  color: 'purple'
+
+inputs:
+  anthropic_api_key:
+    description: 'Anthropic API key used to call Claude'
+    required: true
+  github_token:
+    description: 'Token used to read PR data and post the review'
+    required: false
+    default: ${{ github.token }}
+  model:
+    description: 'Claude model id to use for the review'
+    required: false
+    default: 'claude-sonnet-5'
+  max_files:
+    description: 'Maximum number of changed files to include in the review'
+    required: false
+    default: '40'
+  exclude:
+    description: 'Comma-separated glob patterns of files to skip (e.g. "**/*.lock,dist/**")'
+    required: false
+    default: ''
+
+outputs:
+  review_event:
+    description: 'The review event Claude submitted (APPROVE, COMMENT, or REQUEST_CHANGES)'
+  comment_count:
+    description: 'Number of inline comments posted'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

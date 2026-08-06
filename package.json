@@ -1,0 +1,23 @@
+{
+  "name": "claude-code-review",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GitHub Action that reviews pull requests using Claude",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "ncc build src/index.ts -o dist --source-map --license licenses.txt",
+    "typecheck": "tsc --noEmit",
+    "package": "npm run typecheck && npm run build"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^2.0.3",
+    "@actions/github": "^8.0.1",
+    "@anthropic-ai/sdk": "^0.32.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@vercel/ncc": "^0.38.1",
+    "typescript": "^5.5.4"
+  }
+}
