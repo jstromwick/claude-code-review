@@ -37705,6 +37705,8 @@ const github = __importStar(__nccwpck_require__(3228));
 const diff_1 = __nccwpck_require__(9952);
 const anthropic_1 = __nccwpck_require__(5027);
 const glob_1 = __nccwpck_require__(5601);
+const logger_1 = __nccwpck_require__(7893);
+const logger = new logger_1.Logger();
 async function run() {
     const apiKey = core.getInput('anthropic_api_key', { required: true });
     const token = core.getInput('github_token', { required: true });
@@ -37717,7 +37719,7 @@ async function run() {
         .filter(Boolean);
     const pullRequest = github.context.payload.pull_request;
     if (!pullRequest) {
-        core.info('Event has no pull_request payload, skipping.');
+        logger.log('Event has no pull_request payload, skipping.');
         return;
     }
     const octokit = github.getOctokit(token);
@@ -37726,11 +37728,11 @@ async function run() {
     let files = await (0, diff_1.getChangedFiles)(octokit, owner, repo, pullNumber);
     files = files.filter((file) => file.patch && !(0, glob_1.matchesAny)(excludePatterns, file.filename));
     if (files.length === 0) {
-        core.info('No reviewable file changes found.');
+        logger.log('No reviewable file changes found.');
         return;
     }
     if (files.length > maxFiles) {
-        core.warning(`${files.length} changed files exceeds max_files=${maxFiles}; reviewing the first ${maxFiles}.`);
+        logger.warn(`${files.length} changed files exceeds max_files=${maxFiles}; reviewing the first ${maxFiles}.`);
         files = files.slice(0, maxFiles);
     }
     const result = await (0, anthropic_1.reviewDiff)(apiKey, model, pullRequest.title, pullRequest.body ?? '', files);
@@ -37749,7 +37751,7 @@ async function run() {
         });
     }
     catch (error) {
-        core.warning(`Failed to post inline review comments, falling back to a summary-only comment: ${error instanceof Error ? error.message : String(error)}`);
+        logger.warn(`Failed to post inline review comments, falling back to a summary-only comment: ${error instanceof Error ? error.message : String(error)}`);
         await octokit.rest.pulls.createReview({
             owner,
             repo,
@@ -37764,6 +37766,66 @@ async function run() {
 run().catch((error) => {
     core.setFailed(error instanceof Error ? error.message : String(error));
 });
+
+
+/***/ }),
+
+/***/ 7893:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Logger = void 0;
+const core = __importStar(__nccwpck_require__(7484));
+class Logger {
+    log(message) {
+        core.info(message);
+    }
+    warn(message) {
+        core.warning(message);
+    }
+    error(message) {
+        core.error(message);
+    }
+    debug(message) {
+        core.debug(message);
+    }
+}
+exports.Logger = Logger;
 
 
 /***/ }),
