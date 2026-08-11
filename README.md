@@ -33,20 +33,20 @@ Add `ANTHROPIC_API_KEY` as a repository or organization secret.
 
 ### Inputs
 
-| Input               | Required | Default              | Description                                                              |
-| -------------------- | -------- | --------------------- | -------------------------------------------------------------------------- |
-| `anthropic_api_key`  | yes      | —                      | Anthropic API key used to call Claude.                                     |
-| `github_token`       | no       | `${{ github.token }}` | Token used to read PR data and post the review.                            |
-| `model`              | no       | `claude-sonnet-5`      | Claude model id to use for the review.                                     |
-| `max_files`          | no       | `40`                   | Maximum number of changed files to include in the review.                  |
-| `exclude`            | no       | `''`                   | Comma-separated glob patterns of files to skip, e.g. `**/*.lock,dist/**`.  |
+| Input               | Required | Default               | Description                                                               |
+| ------------------- | -------- | --------------------- | ------------------------------------------------------------------------- |
+| `anthropic_api_key` | yes      | —                     | Anthropic API key used to call Claude.                                    |
+| `github_token`      | no       | `${{ github.token }}` | Token used to read PR data and post the review.                           |
+| `model`             | no       | `claude-sonnet-5`     | Claude model id to use for the review.                                    |
+| `max_files`         | no       | `40`                  | Maximum number of changed files to include in the review.                 |
+| `exclude`           | no       | `''`                  | Comma-separated glob patterns of files to skip, e.g. `**/*.lock,dist/**`. |
 
 ### Outputs
 
-| Output          | Description                                                    |
-| ---------------- | ---------------------------------------------------------------- |
-| `review_event`   | The review event Claude submitted (`APPROVE`, `COMMENT`, or `REQUEST_CHANGES`). |
-| `comment_count`  | Number of inline comments posted.                               |
+| Output          | Description                                                                     |
+| --------------- | ------------------------------------------------------------------------------- |
+| `review_event`  | The review event Claude submitted (`APPROVE`, `COMMENT`, or `REQUEST_CHANGES`). |
+| `comment_count` | Number of inline comments posted.                                               |
 
 ## How it works
 

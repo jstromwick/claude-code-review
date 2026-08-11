@@ -3,14 +3,14 @@ export function matchesAny(patterns: string[], filePath: string): boolean {
 }
 
 function globToRegExp(pattern: string): RegExp {
-  const segments = pattern.split('**');
+  const segments = pattern.split("**");
   const escaped = segments
     .map((segment) =>
       segment
-        .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-        .replace(/\*/g, '[^/]*')
-        .replace(/\?/g, '.')
+        .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+        .replace(/\*/g, "[^/]*")
+        .replace(/\?/g, "."),
     )
-    .join('.*');
+    .join(".*");
   return new RegExp(`^${escaped}$`);
 }

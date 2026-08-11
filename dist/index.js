@@ -37554,34 +37554,40 @@ Only comment on lines that appear in the diff. Be concise: each comment should b
 If you find nothing worth flagging, return an empty comments array and use the APPROVE event.
 Only use REQUEST_CHANGES for bugs, security issues, or correctness problems you are confident about.`;
 const REVIEW_TOOL = {
-    name: 'submit_review',
-    description: 'Submit the completed pull request review',
+    name: "submit_review",
+    description: "Submit the completed pull request review",
     input_schema: {
-        type: 'object',
+        type: "object",
         properties: {
             summary: {
-                type: 'string',
-                description: 'Overall summary of the review, 2-4 sentences',
+                type: "string",
+                description: "Overall summary of the review, 2-4 sentences",
             },
             event: {
-                type: 'string',
-                enum: ['COMMENT', 'REQUEST_CHANGES', 'APPROVE'],
-                description: 'REQUEST_CHANGES only for bugs, security issues, or correctness problems. APPROVE if nothing to flag. Otherwise COMMENT.',
+                type: "string",
+                enum: ["COMMENT", "REQUEST_CHANGES", "APPROVE"],
+                description: "REQUEST_CHANGES only for bugs, security issues, or correctness problems. APPROVE if nothing to flag. Otherwise COMMENT.",
             },
             comments: {
-                type: 'array',
+                type: "array",
                 items: {
-                    type: 'object',
+                    type: "object",
                     properties: {
-                        path: { type: 'string', description: 'File path exactly as it appears in the diff' },
-                        line: { type: 'number', description: 'Line number in the new version of the file' },
-                        body: { type: 'string' },
+                        path: {
+                            type: "string",
+                            description: "File path exactly as it appears in the diff",
+                        },
+                        line: {
+                            type: "number",
+                            description: "Line number in the new version of the file",
+                        },
+                        body: { type: "string" },
                     },
-                    required: ['path', 'line', 'body'],
+                    required: ["path", "line", "body"],
                 },
             },
         },
-        required: ['summary', 'event', 'comments'],
+        required: ["summary", "event", "comments"],
     },
 };
 async function reviewDiff(apiKey, model, prTitle, prBody, files) {
@@ -37589,23 +37595,23 @@ async function reviewDiff(apiKey, model, prTitle, prBody, files) {
     const diffText = files
         .filter((file) => file.patch)
         .map((file) => `--- ${file.filename} (${file.status}) ---\n${file.patch}`)
-        .join('\n\n');
+        .join("\n\n");
     const message = await client.messages.create({
         model,
         max_tokens: 4096,
         system: SYSTEM_PROMPT,
         tools: [REVIEW_TOOL],
-        tool_choice: { type: 'tool', name: 'submit_review' },
+        tool_choice: { type: "tool", name: "submit_review" },
         messages: [
             {
-                role: 'user',
-                content: `PR title: ${prTitle}\n\nPR description:\n${prBody || '(none)'}\n\nDiff:\n${diffText}`,
+                role: "user",
+                content: `PR title: ${prTitle}\n\nPR description:\n${prBody || "(none)"}\n\nDiff:\n${diffText}`,
             },
         ],
     });
-    const toolUse = message.content.find((block) => block.type === 'tool_use');
+    const toolUse = message.content.find((block) => block.type === "tool_use");
     if (!toolUse) {
-        throw new Error('Claude did not return a structured review');
+        throw new Error("Claude did not return a structured review");
     }
     return toolUse.input;
 }
@@ -37648,13 +37654,13 @@ function matchesAny(patterns, filePath) {
     return patterns.some((pattern) => globToRegExp(pattern).test(filePath));
 }
 function globToRegExp(pattern) {
-    const segments = pattern.split('**');
+    const segments = pattern.split("**");
     const escaped = segments
         .map((segment) => segment
-        .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-        .replace(/\*/g, '[^/]*')
-        .replace(/\?/g, '.'))
-        .join('.*');
+        .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+        .replace(/\*/g, "[^/]*")
+        .replace(/\?/g, "."))
+        .join(".*");
     return new RegExp(`^${escaped}$`);
 }
 
@@ -37708,18 +37714,18 @@ const glob_1 = __nccwpck_require__(5601);
 const logger_1 = __nccwpck_require__(7893);
 const logger = new logger_1.Logger();
 async function run() {
-    const apiKey = core.getInput('anthropic_api_key', { required: true });
-    const token = core.getInput('github_token', { required: true });
-    const model = core.getInput('model') || 'claude-sonnet-5';
-    const maxFiles = parseInt(core.getInput('max_files') || '40', 10);
+    const apiKey = core.getInput("anthropic_api_key", { required: true });
+    const token = core.getInput("github_token", { required: true });
+    const model = core.getInput("model") || "claude-sonnet-5";
+    const maxFiles = parseInt(core.getInput("max_files") || "40", 10);
     const excludePatterns = core
-        .getInput('exclude')
-        .split(',')
+        .getInput("exclude")
+        .split(",")
         .map((pattern) => pattern.trim())
         .filter(Boolean);
     const pullRequest = github.context.payload.pull_request;
     if (!pullRequest) {
-        logger.log('Event has no pull_request payload, skipping.');
+        logger.log("Event has no pull_request payload, skipping.");
         return;
     }
     const octokit = github.getOctokit(token);
@@ -37728,23 +37734,27 @@ async function run() {
     let files = await (0, diff_1.getChangedFiles)(octokit, owner, repo, pullNumber);
     files = files.filter((file) => file.patch && !(0, glob_1.matchesAny)(excludePatterns, file.filename));
     if (files.length === 0) {
-        logger.log('No reviewable file changes found.');
+        logger.log("No reviewable file changes found.");
         return;
     }
     if (files.length > maxFiles) {
         logger.warn(`${files.length} changed files exceeds max_files=${maxFiles}; reviewing the first ${maxFiles}.`);
         files = files.slice(0, maxFiles);
     }
-    const result = await (0, anthropic_1.reviewDiff)(apiKey, model, pullRequest.title, pullRequest.body ?? '', files);
+    const result = await (0, anthropic_1.reviewDiff)(apiKey, model, pullRequest.title, pullRequest.body ?? "", files);
     const validPaths = new Set(files.map((file) => file.filename));
     const comments = result.comments
         .filter((comment) => validPaths.has(comment.path))
-        .map((comment) => ({ path: comment.path, line: comment.line, body: comment.body }));
+        .map((comment) => ({
+        path: comment.path,
+        line: comment.line,
+        body: comment.body,
+    }));
     // The default GITHUB_TOKEN is blocked from submitting APPROVE reviews (GitHub disables
     // this by default so a workflow can't self-approve a PR past required-review protection).
     // Downgrade to COMMENT so the review still posts; `review_event` output keeps Claude's
     // actual verdict for callers who grant approval permission via a different token.
-    const submissionEvent = result.event === 'APPROVE' ? 'COMMENT' : result.event;
+    const submissionEvent = result.event === "APPROVE" ? "COMMENT" : result.event;
     try {
         await octokit.rest.pulls.createReview({
             owner,
@@ -37762,11 +37772,11 @@ async function run() {
             repo,
             pull_number: pullNumber,
             body: result.summary,
-            event: 'COMMENT',
+            event: "COMMENT",
         });
     }
-    core.setOutput('review_event', result.event);
-    core.setOutput('comment_count', String(comments.length));
+    core.setOutput("review_event", result.event);
+    core.setOutput("comment_count", String(comments.length));
 }
 run().catch((error) => {
     core.setFailed(error instanceof Error ? error.message : String(error));

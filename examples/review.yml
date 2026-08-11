@@ -18,4 +18,4 @@ jobs:
       - uses: jstromwick/claude-code-review@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          exclude: '**/*.lock,dist/**,**/*.min.js'
+          exclude: "**/*.lock,dist/**,**/*.min.js"
