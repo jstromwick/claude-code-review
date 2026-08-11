@@ -3,6 +3,9 @@ import * as github from '@actions/github';
 import { getChangedFiles } from './diff';
 import { reviewDiff } from './anthropic';
 import { matchesAny } from './glob';
+import { Logger } from './utils/logger';
+
+const logger = new Logger();
 
 async function run(): Promise<void> {
   const apiKey = core.getInput('anthropic_api_key', { required: true });
@@ -17,7 +20,7 @@ async function run(): Promise<void> {
 
   const pullRequest = github.context.payload.pull_request;
   if (!pullRequest) {
-    core.info('Event has no pull_request payload, skipping.');
+    logger.log('Event has no pull_request payload, skipping.');
     return;
   }
 
@@ -29,12 +32,12 @@ async function run(): Promise<void> {
   files = files.filter((file) => file.patch && !matchesAny(excludePatterns, file.filename));
 
   if (files.length === 0) {
-    core.info('No reviewable file changes found.');
+    logger.log('No reviewable file changes found.');
     return;
   }
 
   if (files.length > maxFiles) {
-    core.warning(
+    logger.warn(
       `${files.length} changed files exceeds max_files=${maxFiles}; reviewing the first ${maxFiles}.`
     );
     files = files.slice(0, maxFiles);
@@ -47,17 +50,23 @@ async function run(): Promise<void> {
     .filter((comment) => validPaths.has(comment.path))
     .map((comment) => ({ path: comment.path, line: comment.line, body: comment.body }));
 
+  // The default GITHUB_TOKEN is blocked from submitting APPROVE reviews (GitHub disables
+  // this by default so a workflow can't self-approve a PR past required-review protection).
+  // Downgrade to COMMENT so the review still posts; `review_event` output keeps Claude's
+  // actual verdict for callers who grant approval permission via a different token.
+  const submissionEvent = result.event === 'APPROVE' ? 'COMMENT' : result.event;
+
   try {
     await octokit.rest.pulls.createReview({
       owner,
       repo,
       pull_number: pullNumber,
       body: result.summary,
-      event: result.event,
+      event: submissionEvent,
       comments,
     });
   } catch (error) {
-    core.warning(
+    logger.warn(
       `Failed to post inline review comments, falling back to a summary-only comment: ${
         error instanceof Error ? error.message : String(error)
       }`
