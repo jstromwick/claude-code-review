@@ -1,4 +1,4 @@
-import * as core from '@actions/core';
+import * as core from "@actions/core";
 
 export class Logger {
   public log(message: string): void {

@@ -12,6 +12,6 @@ export interface ReviewComment {
 
 export interface ReviewResult {
   summary: string;
-  event: 'COMMENT' | 'REQUEST_CHANGES' | 'APPROVE';
+  event: "COMMENT" | "REQUEST_CHANGES" | "APPROVE";
   comments: ReviewComment[];
 }
