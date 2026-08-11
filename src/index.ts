@@ -50,13 +50,19 @@ async function run(): Promise<void> {
     .filter((comment) => validPaths.has(comment.path))
     .map((comment) => ({ path: comment.path, line: comment.line, body: comment.body }));
 
+  // The default GITHUB_TOKEN is blocked from submitting APPROVE reviews (GitHub disables
+  // this by default so a workflow can't self-approve a PR past required-review protection).
+  // Downgrade to COMMENT so the review still posts; `review_event` output keeps Claude's
+  // actual verdict for callers who grant approval permission via a different token.
+  const submissionEvent = result.event === 'APPROVE' ? 'COMMENT' : result.event;
+
   try {
     await octokit.rest.pulls.createReview({
       owner,
       repo,
       pull_number: pullNumber,
       body: result.summary,
-      event: result.event,
+      event: submissionEvent,
       comments,
     });
   } catch (error) {
